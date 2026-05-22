@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: fraud
+    type: file
+    folder: ''
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

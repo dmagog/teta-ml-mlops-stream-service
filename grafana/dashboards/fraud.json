@@ -1,0 +1,149 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "TPS — обработано транзакций в секунду",
+      "description": "Число заскоренных транзакций в секунду по времени (учитывает фильтры по штату и мерчанту).",
+      "datasource": { "type": "postgres", "uid": "fraud_pg" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars", "fillOpacity": 50, "lineWidth": 1, "axisLabel": "транз./сек" },
+          "unit": "cps",
+          "color": { "mode": "fixed", "fixedColor": "blue" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "showLegend": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(scored_at, '1s'), count(*) AS tps FROM transaction_scores WHERE $__timeFilter(scored_at) AND us_state = ANY(string_to_array('${us_state:csv}', ',')) AND merch = ANY(string_to_array('${merch:csv}', ',')) GROUP BY 1 ORDER BY 1",
+          "datasource": { "type": "postgres", "uid": "fraud_pg" }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "barchart",
+      "title": "Плотность распределения скоров (нормированная, фильтры по штату и мерчанту)",
+      "description": "Доля транзакций в бакетах скора шириной 0.05 (сумма по бакетам = 1) по последним 5000 записям.",
+      "datasource": { "type": "postgres", "uid": "fraud_pg" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 80, "lineWidth": 1 },
+          "unit": "percentunit",
+          "min": 0,
+          "color": { "mode": "fixed", "fixedColor": "orange" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "xField": "score_bucket",
+        "showValue": "never",
+        "legend": { "showLegend": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH f AS (SELECT score FROM transaction_scores WHERE us_state = ANY(string_to_array('${us_state:csv}', ',')) AND merch = ANY(string_to_array('${merch:csv}', ',')) ORDER BY scored_at DESC LIMIT 5000) SELECT round((width_bucket(LEAST(score, 0.999), 0, 1, 20) - 1) * 0.05, 2) AS score_bucket, count(*)::float / NULLIF((SELECT count(*) FROM f), 0) AS density FROM f GROUP BY 1 ORDER BY 1",
+          "datasource": { "type": "postgres", "uid": "fraud_pg" }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "barchart",
+      "title": "Средняя доля фрода по категории cat_id (последние 1000)",
+      "description": "Средний fraud_flag по каждой категории продукта за последние 1000 транзакций (учитывает фильтры).",
+      "datasource": { "type": "postgres", "uid": "fraud_pg" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 80, "lineWidth": 1 },
+          "unit": "percentunit",
+          "min": 0,
+          "color": { "mode": "continuous-GrYlRd" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "cat_id",
+        "showValue": "auto",
+        "stacking": "none",
+        "legend": { "showLegend": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT cat_id, avg(fraud_flag::float) AS fraud_rate FROM (SELECT cat_id, fraud_flag FROM transaction_scores WHERE us_state = ANY(string_to_array('${us_state:csv}', ',')) AND merch = ANY(string_to_array('${merch:csv}', ',')) ORDER BY scored_at DESC LIMIT 1000) t GROUP BY cat_id ORDER BY fraud_rate DESC",
+          "datasource": { "type": "postgres", "uid": "fraud_pg" }
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["fraud", "mlops"],
+  "templating": {
+    "list": [
+      {
+        "name": "us_state",
+        "label": "Штат (us_state)",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "fraud_pg" },
+        "definition": "SELECT DISTINCT us_state FROM transaction_scores WHERE us_state IS NOT NULL ORDER BY 1",
+        "query": "SELECT DISTINCT us_state FROM transaction_scores WHERE us_state IS NOT NULL ORDER BY 1",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "options": []
+      },
+      {
+        "name": "merch",
+        "label": "Мерчант (merch)",
+        "type": "query",
+        "datasource": { "type": "postgres", "uid": "fraud_pg" },
+        "definition": "SELECT DISTINCT merch FROM transaction_scores WHERE merch IS NOT NULL ORDER BY 1",
+        "query": "SELECT DISTINCT merch FROM transaction_scores WHERE merch IS NOT NULL ORDER BY 1",
+        "includeAll": true,
+        "multi": true,
+        "refresh": 2,
+        "sort": 1,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "options": []
+      }
+    ]
+  },
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Fraud Scoring — потоковый дашборд",
+  "uid": "fraud_stream",
+  "version": 1,
+  "weekStart": ""
+}

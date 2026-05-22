@@ -1,0 +1,5 @@
+# Зависимости для воспроизведения модели (generate_data.py + train.py).
+catboost==1.2.8
+numpy==1.26.4
+pandas==2.2.3
+scikit-learn==1.5.2

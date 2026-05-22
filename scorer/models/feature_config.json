@@ -1,0 +1,55 @@
+{
+  "model_file": "fraud_catboost.cbm",
+  "id_col": "trans_num",
+  "threshold": 0.27999999999999997,
+  "val_auc": 0.8274,
+  "raw_required_columns": [
+    "trans_num",
+    "trans_date_trans_time",
+    "cc_num",
+    "merchant",
+    "category",
+    "amt",
+    "gender",
+    "city",
+    "state",
+    "zip",
+    "lat",
+    "long",
+    "city_pop",
+    "job",
+    "dob",
+    "unix_time",
+    "merch_lat",
+    "merch_long"
+  ],
+  "feature_columns": [
+    "hour",
+    "dayofweek",
+    "month",
+    "amt",
+    "amt_log1p",
+    "distance_km",
+    "age",
+    "city_pop",
+    "city_pop_log1p",
+    "category",
+    "merchant",
+    "state",
+    "gender",
+    "job"
+  ],
+  "categorical_features": [
+    "category",
+    "merchant",
+    "state",
+    "gender",
+    "job"
+  ],
+  "analytics_columns": {
+    "us_state": "state",
+    "merch": "merchant",
+    "cat_id": "category",
+    "amt": "amt"
+  }
+}

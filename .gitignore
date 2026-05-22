@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.DS_Store
+.ipynb_checkpoints/
+*.parquet
+
+# Локальные переменные окружения (значения по умолчанию заданы в docker-compose.yml,
+# образец — в .env.example). В репозиторий не коммитим.
+.env
+
+# Телеметрия обучения CatBoost (создаётся при запуске model/train.py).
+catboost_info/
+
+# Сгенерированный обучающий набор (воспроизводится через model/generate_data.py).
+model/data/
